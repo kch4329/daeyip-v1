@@ -100,7 +100,7 @@ export function calculateUniversityScore(
 export function calculatePercentileBasedScore(scores: ExamScores): number {
   const korean = scores.korean.percentile || 0;
   const math = scores.math.percentile || 0;
-  const english = scores.english.percentile || 0;
+  const english = convertEnglishGradeToScore(scores.english.grade || 9);
   const inquiry1 = scores.inquiry1.percentile || 0;
   const inquiry2 = scores.inquiry2.percentile || 0;
 
@@ -115,18 +115,31 @@ export function calculatePercentileBasedScore(scores: ExamScores): number {
 
 // 점수 유효성 검증
 export function validateScores(scores: ExamScores): boolean {
-  const subjects = [
+  // 국어, 수학, 탐구는 SubjectScore 타입
+  const regularSubjects = [
     scores.korean,
     scores.math,
-    scores.english,
     scores.inquiry1,
     scores.inquiry2,
   ];
 
-  // 최소한 필수 과목의 점수가 입력되어 있는지 확인
-  return subjects.every(subject =>
+  // 영어, 한국사는 AbsoluteScore 타입 (등급만)
+  const absoluteSubjects = [
+    scores.english,
+    scores.koreanHistory,
+  ];
+
+  // 일반 과목은 최소한 하나의 점수 필드가 입력되어야 함
+  const regularValid = regularSubjects.every(subject =>
     subject.standardScore !== null ||
     subject.percentile !== null ||
     subject.grade !== null
   );
+
+  // 절대평가 과목은 등급이 입력되어야 함
+  const absoluteValid = absoluteSubjects.every(subject =>
+    subject.grade !== null
+  );
+
+  return regularValid && absoluteValid;
 }

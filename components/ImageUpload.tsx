@@ -44,11 +44,12 @@ export default function ImageUpload({ onScoresExtracted }: ImageUploadProps) {
 
     // 더미 데이터 (실제로는 OCR 결과를 파싱하여 반환)
     const dummyScores: Partial<ExamScores> = {
-      korean: { standardScore: 130, percentile: 92, grade: 2 },
-      math: { standardScore: 135, percentile: 95, grade: 1 },
-      english: { standardScore: null, percentile: null, grade: 2 },
-      inquiry1: { standardScore: 68, percentile: 90, grade: 2 },
-      inquiry2: { standardScore: 65, percentile: 88, grade: 2 },
+      korean: { selectedSubject: '화법과작문', standardScore: 130, percentile: 92, grade: 2 },
+      math: { selectedSubject: '미적분', standardScore: 135, percentile: 95, grade: 1 },
+      english: { grade: 2 },
+      koreanHistory: { grade: 3 },
+      inquiry1: { selectedSubject: '생명과학Ⅰ', standardScore: 68, percentile: 90, grade: 2 },
+      inquiry2: { selectedSubject: '지구과학Ⅰ', standardScore: 65, percentile: 88, grade: 2 },
     };
 
     onScoresExtracted(dummyScores);

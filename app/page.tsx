@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import ScoreInput from '@/components/ScoreInput';
+import AbsoluteScoreInput from '@/components/AbsoluteScoreInput';
 import ImageUpload from '@/components/ImageUpload';
 import UniversitySelector from '@/components/UniversitySelector';
 import PredictionResultComponent from '@/components/PredictionResult';
@@ -12,14 +13,17 @@ import { getAdmissionDataByDepartment } from '@/data/admissionData';
 import { getDepartmentById } from '@/data/universities';
 
 export default function Home() {
+  // 탭 상태 (성적 입력 / 사진 업로드)
+  const [activeTab, setActiveTab] = useState<'manual' | 'photo'>('manual');
+
   // 성적 상태
   const [scores, setScores] = useState<ExamScores>({
-    korean: { standardScore: null, percentile: null, grade: null },
-    math: { standardScore: null, percentile: null, grade: null },
-    english: { standardScore: null, percentile: null, grade: null },
-    koreanHistory: { standardScore: null, percentile: null, grade: null },
-    inquiry1: { standardScore: null, percentile: null, grade: null },
-    inquiry2: { standardScore: null, percentile: null, grade: null },
+    korean: { selectedSubject: null, standardScore: null, percentile: null, grade: null },
+    math: { selectedSubject: null, standardScore: null, percentile: null, grade: null },
+    english: { grade: null },
+    koreanHistory: { grade: null },
+    inquiry1: { selectedSubject: null, standardScore: null, percentile: null, grade: null },
+    inquiry2: { selectedSubject: null, standardScore: null, percentile: null, grade: null },
   });
 
   // 대학 선택 상태
@@ -112,51 +116,101 @@ export default function Home() {
 
       {/* 메인 컨텐츠 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 사진 업로드 섹션 */}
+        {/* 성적 입력/사진 업로드 탭 섹션 */}
         <section className="mb-8">
-          <ImageUpload onScoresExtracted={handleScoresExtracted} />
-        </section>
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            {/* 탭 헤더 */}
+            <div className="flex border-b border-gray-200">
+              <button
+                onClick={() => setActiveTab('manual')}
+                className={`flex-1 px-6 py-4 text-center font-semibold transition-colors ${
+                  activeTab === 'manual'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                📝 직접 입력
+              </button>
+              <button
+                onClick={() => setActiveTab('photo')}
+                className={`flex-1 px-6 py-4 text-center font-semibold transition-colors ${
+                  activeTab === 'photo'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                📸 사진 업로드
+              </button>
+            </div>
 
-        {/* 성적 입력 섹션 */}
-        <section className="mb-8">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">
-              📝 수능 성적 입력
-            </h2>
-            <p className="text-sm text-gray-600 mb-4">
-              각 과목별로 표준점수, 백분위, 등급을 입력해주세요. (최소 1개 이상 입력 필수)
-            </p>
+            {/* 탭 컨텐츠 */}
+            <div className="p-6">
+              {activeTab === 'manual' ? (
+                // 직접 입력 탭
+                <div>
+                  <h2 className="text-2xl font-bold mb-4 text-gray-800">
+                    수능 성적 입력
+                  </h2>
+                  <p className="text-sm text-gray-600 mb-6">
+                    각 과목별로 선택과목과 성적을 입력해주세요.
+                  </p>
 
-            <ScoreInput
-              label="국어"
-              score={scores.korean}
-              onChange={(score) => setScores({ ...scores, korean: score })}
-            />
-            <ScoreInput
-              label="수학"
-              score={scores.math}
-              onChange={(score) => setScores({ ...scores, math: score })}
-            />
-            <ScoreInput
-              label="영어"
-              score={scores.english}
-              onChange={(score) => setScores({ ...scores, english: score })}
-            />
-            <ScoreInput
-              label="한국사"
-              score={scores.koreanHistory}
-              onChange={(score) => setScores({ ...scores, koreanHistory: score })}
-            />
-            <ScoreInput
-              label="탐구 1"
-              score={scores.inquiry1}
-              onChange={(score) => setScores({ ...scores, inquiry1: score })}
-            />
-            <ScoreInput
-              label="탐구 2"
-              score={scores.inquiry2}
-              onChange={(score) => setScores({ ...scores, inquiry2: score })}
-            />
+                  {/* 국어 */}
+                  <ScoreInput
+                    label="국어"
+                    score={scores.korean}
+                    onChange={(score) => setScores({ ...scores, korean: score })}
+                    subjectType="korean"
+                  />
+
+                  {/* 수학 */}
+                  <ScoreInput
+                    label="수학"
+                    score={scores.math}
+                    onChange={(score) => setScores({ ...scores, math: score })}
+                    subjectType="math"
+                  />
+
+                  {/* 영어 (절대평가) */}
+                  <AbsoluteScoreInput
+                    label="영어"
+                    score={scores.english}
+                    onChange={(score) => setScores({ ...scores, english: score })}
+                  />
+
+                  {/* 한국사 (절대평가) */}
+                  <AbsoluteScoreInput
+                    label="한국사"
+                    score={scores.koreanHistory}
+                    onChange={(score) => setScores({ ...scores, koreanHistory: score })}
+                  />
+
+                  {/* 탐구 1 */}
+                  <ScoreInput
+                    label="탐구 1"
+                    score={scores.inquiry1}
+                    onChange={(score) => setScores({ ...scores, inquiry1: score })}
+                    subjectType="inquiry"
+                  />
+
+                  {/* 탐구 2 */}
+                  <ScoreInput
+                    label="탐구 2"
+                    score={scores.inquiry2}
+                    onChange={(score) => setScores({ ...scores, inquiry2: score })}
+                    subjectType="inquiry"
+                  />
+                </div>
+              ) : (
+                // 사진 업로드 탭
+                <div>
+                  <h2 className="text-2xl font-bold mb-4 text-gray-800">
+                    성적표 사진 업로드
+                  </h2>
+                  <ImageUpload onScoresExtracted={handleScoresExtracted} />
+                </div>
+              )}
+            </div>
           </div>
         </section>
 

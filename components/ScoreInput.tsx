@@ -1,27 +1,73 @@
 'use client';
 
 import React from 'react';
-import { SubjectScore } from '@/types';
+import { SubjectScore, KoreanSubject, MathSubject, InquirySubject } from '@/types';
 
 interface ScoreInputProps {
   label: string;
   score: SubjectScore;
   onChange: (score: SubjectScore) => void;
-  showSecondLanguage?: boolean;
+  subjectType: 'korean' | 'math' | 'inquiry';
 }
 
-export default function ScoreInput({ label, score, onChange, showSecondLanguage = false }: ScoreInputProps) {
+const koreanSubjects: KoreanSubject[] = ['화법과작문', '언어와매체'];
+const mathSubjects: MathSubject[] = ['확률과통계', '미적분', '기하'];
+const inquirySubjects: InquirySubject[] = [
+  // 사회탐구
+  '생활과윤리', '윤리와사상', '한국지리', '세계지리',
+  '동아시아사', '세계사', '경제', '정치와법', '사회문화',
+  // 과학탐구
+  '물리학Ⅰ', '물리학Ⅱ', '화학Ⅰ', '화학Ⅱ',
+  '생명과학Ⅰ', '생명과학Ⅱ', '지구과학Ⅰ', '지구과학Ⅱ',
+];
+
+export default function ScoreInput({ label, score, onChange, subjectType }: ScoreInputProps) {
   const handleChange = (field: keyof SubjectScore, value: string) => {
-    const numValue = value === '' ? null : parseInt(value);
+    const numValue = value === '' ? null : (field === 'selectedSubject' ? value : parseInt(value));
     onChange({
       ...score,
       [field]: numValue,
     });
   };
 
+  const getSubjectOptions = () => {
+    switch (subjectType) {
+      case 'korean':
+        return koreanSubjects;
+      case 'math':
+        return mathSubjects;
+      case 'inquiry':
+        return inquirySubjects;
+      default:
+        return [];
+    }
+  };
+
+  const subjectOptions = getSubjectOptions();
+
   return (
     <div className="mb-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
       <h3 className="text-lg font-semibold mb-3 text-gray-700">{label}</h3>
+
+      {/* 선택과목 */}
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-600 mb-1">
+          선택과목
+        </label>
+        <select
+          value={score.selectedSubject ?? ''}
+          onChange={(e) => handleChange('selectedSubject', e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">선택하세요</option>
+          {subjectOptions.map((subject) => (
+            <option key={subject} value={subject}>
+              {subject}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* 표준점수 */}
         <div>
