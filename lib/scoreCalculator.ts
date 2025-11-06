@@ -1,9 +1,13 @@
-import { ExamScores } from '@/types';
+import { ExamScores, Track } from '@/types';
+import {
+  getConversionFormula,
+  yonseiEnglishDeduction,
+  yonseiKoreanHistoryDeduction,
+} from '@/data/conversionFormulas';
 
 /**
  * 대학별 환산점수 계산 엔진
- * 실제로는 각 대학의 복잡한 환산점수 공식을 적용해야 하지만,
- * 여기서는 간소화된 예시를 사용합니다.
+ * 각 대학의 정시 입시요강에 따른 환산점수 공식을 년도별로 적용합니다.
  */
 
 // 기본 환산점수 계산 (표준점수 기반)
