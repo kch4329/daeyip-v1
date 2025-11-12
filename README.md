@@ -54,6 +54,11 @@
 - **State Management**: Zustand
 - **OCR**: Tesseract.js
 
+### Backend
+- **Database**: PostgreSQL 15+
+- **ORM**: Prisma
+- **Authentication**: bcryptjs
+
 ### Development
 - **Package Manager**: npm
 - **Code Quality**: ESLint, Prettier
@@ -73,12 +78,20 @@ daeyip-v1/
 │   └── PredictionResult.tsx    # 예측 결과 컴포넌트
 ├── lib/                   # 유틸리티 및 로직
 │   ├── scoreCalculator.ts # 환산점수 계산
-│   └── predictionEngine.ts # 합격 예측 알고리즘
-├── data/                  # 데이터
+│   ├── predictionEngine.ts # 합격 예측 알고리즘
+│   └── prisma.ts          # Prisma Client 인스턴스
+├── prisma/                # Prisma 설정
+│   ├── schema.prisma      # 데이터베이스 스키마
+│   └── seed.ts            # 시드 데이터
+├── data/                  # 데이터 (시드용)
 │   ├── universities.ts    # 대학 정보
-│   └── admissionData.ts   # 과거 입시 데이터
+│   ├── admissionData.ts   # 과거 입시 데이터
+│   └── conversionFormulas.ts # 환산점수 계산식
 ├── types/                 # TypeScript 타입 정의
 │   └── index.ts
+├── docs/                  # 문서
+│   ├── DATABASE_SCHEMA.md # 데이터베이스 스키마 설계
+│   └── DATABASE_SETUP.md  # 데이터베이스 설정 가이드
 └── TECH_STACK.md         # 기술 스택 문서
 ```
 
@@ -87,12 +100,50 @@ daeyip-v1/
 ### 요구사항
 - Node.js 18.0 이상
 - npm 또는 yarn
+- PostgreSQL 15 이상
 
 ### 설치
 
 ```bash
-# 의존성 설치
+# 1. 의존성 설치
 npm install
+
+# 2. 환경 변수 설정
+cp .env.example .env
+# .env 파일을 열어서 DATABASE_URL 등을 수정
+
+# 3. 데이터베이스 설정
+# PostgreSQL이 실행 중인지 확인
+# 상세한 설정 방법은 docs/DATABASE_SETUP.md 참고
+
+# 4. Prisma 마이그레이션 및 시드 데이터 삽입
+npm run db:migrate
+npm run db:seed
+```
+
+### 데이터베이스 명령어
+
+```bash
+# Prisma Client 생성
+npm run db:generate
+
+# 마이그레이션 생성 및 적용 (개발)
+npm run db:migrate
+
+# 마이그레이션 적용만 (프로덕션)
+npm run db:migrate:deploy
+
+# 스키마를 데이터베이스에 동기화 (마이그레이션 없이)
+npm run db:push
+
+# Prisma Studio 실행 (GUI 데이터베이스 관리)
+npm run db:studio
+
+# 시드 데이터 삽입
+npm run db:seed
+
+# 데이터베이스 초기화 (모든 데이터 삭제)
+npm run db:reset
 ```
 
 ### 개발 서버 실행
@@ -145,15 +196,20 @@ npm start
 - ✅ 주요 대학 데이터
 - ✅ 성적표 OCR
 - ✅ 데이터 시각화
+- ✅ 데이터베이스 스키마 설계 및 구축
 
-### Phase 2 (계획)
-- [ ] 수시모집 합격 예측
+### Phase 2 (진행 중)
+- [ ] 사용자 인증 시스템 (회원가입/로그인)
+- [ ] 사용자별 성적 저장 및 관리
+- [ ] 예측 결과 히스토리
 - [ ] 더 많은 대학 데이터 추가
-- [ ] 실시간 모의지원 통계
-- [ ] 사용자 계정 시스템
-- [ ] 지원 전략 추천 AI
 
 ### Phase 3 (계획)
+- [ ] 수시모집 합격 예측
+- [ ] 실시간 모의지원 통계
+- [ ] 지원 전략 추천 AI
+
+### Phase 4 (계획)
 - [ ] 모바일 앱 (React Native)
 - [ ] 커뮤니티 기능
 - [ ] 합격/불합격 후기

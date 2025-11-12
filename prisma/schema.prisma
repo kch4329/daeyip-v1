@@ -1,0 +1,242 @@
+// Prisma schema for 대입 정시모집 합격 예측 서비스
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// 사용자 관련 모델
+// ============================================
+
+// 사용자 계정 정보
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // bcrypt 해시
+  name      String
+  phone     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  scores      UserScore[]
+  predictions UserPrediction[]
+
+  @@map("users")
+}
+
+// 사용자 수능 성적
+model UserScore {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+
+  // 국어 성적
+  koreanSubject        String? @map("korean_subject")
+  koreanStandardScore  Int?    @map("korean_standard_score")
+  koreanPercentile     Int?    @map("korean_percentile")
+  koreanGrade          Int?    @map("korean_grade")
+
+  // 수학 성적
+  mathSubject        String? @map("math_subject")
+  mathStandardScore  Int?    @map("math_standard_score")
+  mathPercentile     Int?    @map("math_percentile")
+  mathGrade          Int?    @map("math_grade")
+
+  // 영어 성적 (절대평가)
+  englishGrade Int? @map("english_grade")
+
+  // 탐구1 성적
+  inquiry1Subject       String? @map("inquiry1_subject")
+  inquiry1StandardScore Int?    @map("inquiry1_standard_score")
+  inquiry1Percentile    Int?    @map("inquiry1_percentile")
+  inquiry1Grade         Int?    @map("inquiry1_grade")
+
+  // 탐구2 성적
+  inquiry2Subject       String? @map("inquiry2_subject")
+  inquiry2StandardScore Int?    @map("inquiry2_standard_score")
+  inquiry2Percentile    Int?    @map("inquiry2_percentile")
+  inquiry2Grade         Int?    @map("inquiry2_grade")
+
+  // 한국사 성적 (절대평가)
+  koreanHistoryGrade Int? @map("korean_history_grade")
+
+  // 제2외국어/한문 성적 (절대평가, 선택)
+  secondLanguageGrade Int? @map("second_language_grade")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  predictions UserPrediction[]
+
+  @@index([userId])
+  @@map("user_scores")
+}
+
+// ============================================
+// 대학 및 모집단위 모델
+// ============================================
+
+// 대학 정보
+model University {
+  id        String   @id // 예: 'yonsei', 'korea'
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  departments        Department[]
+  conversionFormulas ConversionFormula[]
+
+  @@map("universities")
+}
+
+// 모집단위 정보
+model Department {
+  id           String @id // 예: 'yonsei-business'
+  universityId String @map("university_id")
+  name         String
+  track        Track
+  quota        Int
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  university         University          @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  admissionResults   AdmissionResult[]
+  conversionFormulas ConversionFormula[]
+  predictions        UserPrediction[]
+
+  @@index([universityId])
+  @@index([track])
+  @@map("departments")
+}
+
+// ============================================
+// 입시 데이터 모델
+// ============================================
+
+// 입시 결과 데이터
+model AdmissionResult {
+  id           String @id @default(uuid())
+  departmentId String @map("department_id")
+  year         Int
+
+  // 환산점수 컷
+  cutScore70  Float @map("cut_score_70")
+  cutScoreAvg Float @map("cut_score_avg")
+  cutScoreTop Float @map("cut_score_top")
+
+  // 지원 현황
+  applicants     Int   @map("applicants")
+  admitted       Int   @map("admitted")
+  competition    Float @map("competition")
+  additionalPass Int?  @map("additional_pass")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([departmentId, year])
+  @@index([year])
+  @@map("admission_results")
+}
+
+// 환산점수 계산식
+model ConversionFormula {
+  id           String  @id @default(uuid())
+  universityId String  @map("university_id")
+  departmentId String? @map("department_id") // NULL이면 계열 공통
+  year         Int
+  track        Track
+
+  // 계산 방식
+  formulaType String @map("formula_type") // 'standardScore', 'percentile' 등
+
+  // 영역별 반영 비율 (%)
+  koreanWeight         Float? @map("korean_weight")
+  mathWeight           Float? @map("math_weight")
+  inquiryWeight        Float? @map("inquiry_weight")
+  englishWeight        Float? @map("english_weight")
+  koreanHistoryWeight  Float? @map("korean_history_weight")
+  secondLanguageWeight Float? @map("second_language_weight")
+
+  // 등급별 감점표 (JSON)
+  englishDeductions        Json? @map("english_deductions")
+  koreanHistoryDeductions  Json? @map("korean_history_deductions")
+  secondLanguageDeductions Json? @map("second_language_deductions")
+
+  // 설명
+  description String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  university University  @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([universityId, departmentId, year, track])
+  @@index([year])
+  @@index([track])
+  @@map("conversion_formulas")
+}
+
+// ============================================
+// 예측 결과 모델
+// ============================================
+
+// 사용자 합격 예측 결과 (선택사항)
+model UserPrediction {
+  id            String          @id @default(uuid())
+  userId        String          @map("user_id")
+  userScoreId   String          @map("user_score_id")
+  departmentId  String          @map("department_id")
+  convertedScore Float          @map("converted_score")
+  predictionLevel PredictionLevel @map("prediction_level")
+  probability   Float
+  scoreDifference Float          @map("score_difference")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userScore  UserScore  @relation(fields: [userScoreId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([departmentId])
+  @@index([createdAt])
+  @@map("user_predictions")
+}
+
+// ============================================
+// Enum 타입
+// ============================================
+
+enum Track {
+  인문
+  자연
+  예체능
+
+  @@map("track")
+}
+
+enum PredictionLevel {
+  안정
+  적정
+  소신
+  도전
+  불가능
+
+  @@map("prediction_level")
+}
