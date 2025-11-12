@@ -5,6 +5,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
 import AuthModal from './AuthModal';
 
@@ -27,18 +28,24 @@ export default function Header() {
       <header className="border-b bg-white shadow-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
           {/* 로고 */}
-          <div>
-            <h1 className="text-2xl font-bold text-blue-600">
+          <Link href="/">
+            <h1 className="cursor-pointer text-2xl font-bold text-blue-600 hover:text-blue-700">
               대입 정시모집 합격 예측
             </h1>
-          </div>
+          </Link>
 
           {/* 사용자 메뉴 */}
           <div className="flex items-center gap-4">
             {isAuthenticated && user ? (
               <>
+                <Link
+                  href="/mypage"
+                  className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+                >
+                  마이페이지
+                </Link>
                 <span className="text-sm text-gray-600">
-                  {user.name}님 환영합니다
+                  {user.name}님
                 </span>
                 <button
                   onClick={handleLogout}
