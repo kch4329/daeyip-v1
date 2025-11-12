@@ -6,13 +6,17 @@ import AbsoluteScoreInput from '@/components/AbsoluteScoreInput';
 import ImageUpload from '@/components/ImageUpload';
 import UniversitySelector from '@/components/UniversitySelector';
 import PredictionResultComponent from '@/components/PredictionResult';
+import Header from '@/components/Header';
 import { ExamScores, Track, PredictionResult } from '@/types';
 import { calculateUniversityScore, validateScores } from '@/lib/scoreCalculator';
 import { predictAdmission } from '@/lib/predictionEngine';
 import { getAdmissionDataByDepartment } from '@/data/admissionData';
 import { getDepartmentById } from '@/data/universities';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function Home() {
+  const { isAuthenticated, token } = useAuthStore();
+
   // 탭 상태 (성적 입력 / 사진 업로드)
   const [activeTab, setActiveTab] = useState<'manual' | 'photo'>('manual');
 
@@ -34,6 +38,9 @@ export default function Home() {
   // 예측 결과
   const [predictionResult, setPredictionResult] = useState<PredictionResult | null>(null);
 
+  // 저장된 성적 ID (예측 결과 저장 시 필요)
+  const [savedScoreId, setSavedScoreId] = useState<string | null>(null);
+
   // OCR로 추출된 성적 자동 입력
   const handleScoresExtracted = (extractedScores: Partial<ExamScores>) => {
     setScores((prev) => ({
@@ -43,7 +50,7 @@ export default function Home() {
   };
 
   // 합격 예측 수행
-  const handlePredict = () => {
+  const handlePredict = async () => {
     // 유효성 검사
     if (!validateScores(scores)) {
       alert('최소한 필수 과목의 성적을 입력해주세요.');
@@ -91,6 +98,66 @@ export default function Home() {
 
     setPredictionResult(result);
 
+    // 로그인한 사용자의 경우 성적과 예측 결과 저장
+    if (isAuthenticated && token) {
+      try {
+        // 1. 성적 저장
+        const scoreResponse = await fetch('/api/scores', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            koreanSubject: scores.korean.selectedSubject,
+            koreanStandardScore: scores.korean.standardScore,
+            koreanPercentile: scores.korean.percentile,
+            koreanGrade: scores.korean.grade,
+            mathSubject: scores.math.selectedSubject,
+            mathStandardScore: scores.math.standardScore,
+            mathPercentile: scores.math.percentile,
+            mathGrade: scores.math.grade,
+            englishGrade: scores.english.grade,
+            inquiry1Subject: scores.inquiry1.selectedSubject,
+            inquiry1StandardScore: scores.inquiry1.standardScore,
+            inquiry1Percentile: scores.inquiry1.percentile,
+            inquiry1Grade: scores.inquiry1.grade,
+            inquiry2Subject: scores.inquiry2.selectedSubject,
+            inquiry2StandardScore: scores.inquiry2.standardScore,
+            inquiry2Percentile: scores.inquiry2.percentile,
+            inquiry2Grade: scores.inquiry2.grade,
+            koreanHistoryGrade: scores.koreanHistory.grade,
+            secondLanguageGrade: scores.secondLanguage?.grade,
+          }),
+        });
+
+        if (scoreResponse.ok) {
+          const scoreData = await scoreResponse.json();
+          setSavedScoreId(scoreData.score.id);
+
+          // 2. 예측 결과 저장
+          await fetch('/api/predictions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              userScoreId: scoreData.score.id,
+              departmentId: selectedDepartment,
+              convertedScore: result.convertedScore,
+              predictionLevel: result.level,
+              probability: result.probability,
+              scoreDifference: result.scoreDifference,
+            }),
+          });
+        }
+      } catch (error) {
+        console.error('성적/예측 결과 저장 오류:', error);
+        // 저장 실패해도 예측 결과는 표시
+      }
+    }
+
     // 결과로 스크롤
     setTimeout(() => {
       document.getElementById('prediction-result')?.scrollIntoView({
@@ -103,16 +170,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* 헤더 */}
-      <header className="bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">
-            🎓 대입 정시모집 합격 예측 서비스
-          </h1>
-          <p className="mt-2 text-sm text-gray-600">
-            수능 성적을 입력하고 지원 희망 대학을 선택하면, AI 기반 합격 예측 결과를 확인할 수 있습니다.
-          </p>
-        </div>
-      </header>
+      <Header />
 
       {/* 메인 컨텐츠 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
