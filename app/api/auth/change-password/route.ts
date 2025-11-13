@@ -62,6 +62,14 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // 소셜 로그인 사용자는 비밀번호 변경 불가
+    if (!user.password) {
+      return NextResponse.json(
+        { error: '소셜 로그인 사용자는 비밀번호를 변경할 수 없습니다' },
+        { status: 400 }
+      );
+    }
+
     // 현재 비밀번호 확인
     const isValidPassword = await verifyPassword(currentPassword, user.password);
     if (!isValidPassword) {

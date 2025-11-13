@@ -55,7 +55,7 @@ async function authenticateUser(request: NextRequest) {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await authenticateUser(request);
@@ -63,8 +63,9 @@ export async function GET(
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
+    const { id } = await params;
     const score = await prisma.userScore.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!score) {
@@ -98,7 +99,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await authenticateUser(request);
@@ -106,9 +107,11 @@ export async function PUT(
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
+    const { id } = await params;
+
     // 기존 성적 확인
     const existingScore = await prisma.userScore.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existingScore) {
@@ -143,7 +146,7 @@ export async function PUT(
 
     // 성적 수정
     const updatedScore = await prisma.userScore.update({
-      where: { id: params.id },
+      where: { id },
       data: validationResult.data,
     });
 
@@ -166,7 +169,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await authenticateUser(request);
@@ -174,9 +177,11 @@ export async function DELETE(
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
+    const { id } = await params;
+
     // 기존 성적 확인
     const existingScore = await prisma.userScore.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existingScore) {
@@ -196,7 +201,7 @@ export async function DELETE(
 
     // 성적 삭제
     await prisma.userScore.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({
